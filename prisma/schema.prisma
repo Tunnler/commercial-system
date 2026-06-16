@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
@@ -12,65 +7,207 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PurchaseOrderStatus {
+  PENDING
+  RECEIVED
+}
+
+enum DispatchStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+}
+
 model User {
   id            String    @id
   name          String
-  email         String
+  email         String    @unique
   emailVerified Boolean   @default(false)
   image         String?
+
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
   sessions      Session[]
   accounts      Account[]
-
-  @@unique([email])
-  @@map("user")
 }
 
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
   ipAddress String?
   userAgent String?
+
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@index([userId])
-  @@map("session")
 }
 
 model Account {
   id                    String    @id
+
   accountId             String
   providerId            String
+
   userId                String
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   accessToken           String?
   refreshToken          String?
   idToken               String?
+
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
+
   scope                 String?
+
   password              String?
+
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
-  @@map("account")
 }
 
 model Verification {
   id         String   @id
+
   identifier String
   value      String
+
   expiresAt  DateTime
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
-  @@map("verification")
+}
+
+model Product {
+  id        String   @id @default(cuid())
+
+  code      String   @unique
+  name      String
+  price     Decimal  @db.Decimal(10,2)
+  stock     Int      @default(0)
+  active    Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrderItems PurchaseOrderItem[]
+  invoiceItems       InvoiceItem[]
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+
+  name      String
+  document  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+
+  name      String
+  document  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices Invoice[]
+}
+
+model PurchaseOrder {
+  id         String              @id @default(cuid())
+
+  supplierId String
+  supplier   Supplier            @relation(fields: [supplierId], references: [id])
+
+  status     PurchaseOrderStatus @default(PENDING)
+
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  items      PurchaseOrderItem[]
+  receipts   GoodsReceipt[]
+}
+
+model PurchaseOrderItem {
+  id              String        @id @default(cuid())
+
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+
+  quantity        Int
+  cost            Decimal       @db.Decimal(10,2)
+
+  createdAt       DateTime      @default(now())
+}
+
+model GoodsReceipt {
+  id              String        @id @default(cuid())
+
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+
+  receivedAt      DateTime      @default(now())
+}
+
+model Invoice {
+  id         String       @id @default(cuid())
+
+  customerId String
+  customer   Customer     @relation(fields: [customerId], references: [id])
+
+  subtotal   Decimal      @db.Decimal(10,2)
+  tax        Decimal      @db.Decimal(10,2)
+  total      Decimal      @db.Decimal(10,2)
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  items       InvoiceItem[]
+  dispatches  Dispatch[]
+}
+
+model InvoiceItem {
+  id        String      @id @default(cuid())
+
+  invoiceId String
+  invoice   Invoice     @relation(fields: [invoiceId], references: [id])
+
+  productId String
+  product   Product     @relation(fields: [productId], references: [id])
+
+  quantity  Int
+  price     Decimal     @db.Decimal(10,2)
+
+  createdAt DateTime    @default(now())
+}
+
+model Dispatch {
+  id        String          @id @default(cuid())
+
+  invoiceId String
+  invoice   Invoice         @relation(fields: [invoiceId], references: [id])
+
+  status    DispatchStatus  @default(PENDING)
+
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 }

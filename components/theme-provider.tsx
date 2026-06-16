@@ -39,6 +39,11 @@ function ThemeHotkey() {
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      // ✅ Verificar que event y event.key existen
+      if (!event || !event.key) {
+        return
+      }
+
       if (event.defaultPrevented || event.repeat) {
         return
       }
@@ -47,7 +52,9 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      // ✅ Usar optional chaining y verificar que key existe
+      const key = event.key?.toLowerCase()
+      if (!key || key !== "d") {
         return
       }
 
