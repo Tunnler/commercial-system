@@ -38,23 +38,23 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
 
   const where: Prisma.InvoiceWhereInput = q
     ? {
-        customer: {
-          OR: [
-            {
-              name: {
-                contains: q,
-                mode: "insensitive",
-              },
+      customer: {
+        OR: [
+          {
+            name: {
+              contains: q,
+              mode: "insensitive",
             },
-            {
-              document: {
-                contains: q,
-                mode: "insensitive",
-              },
+          },
+          {
+            document: {
+              contains: q,
+              mode: "insensitive",
             },
-          ],
-        },
-      }
+          },
+        ],
+      },
+    }
     : {}
 
   const [invoices, totalInvoices, totalSales, pendingDispatches] =
@@ -216,11 +216,17 @@ export default async function InvoicesPage({ searchParams }: InvoicesPageProps) 
                         </TableCell>
 
                         <TableCell>
-                          <div className="flex justify-end">
+                          <div className="flex justify-end gap-2">
                             <Button size="sm" variant="outline" asChild>
                               <Link href={`/dashboard/invoices/${invoice.id}`}>
                                 Ver detalle
                               </Link>
+                            </Button>
+
+                            <Button size="sm" variant="secondary" asChild>
+                              <a href={`/dashboard/invoices/${invoice.id}/pdf`}>
+                                PDF
+                              </a>
                             </Button>
                           </div>
                         </TableCell>

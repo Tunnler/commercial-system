@@ -1,5 +1,9 @@
 "use client"
 
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { signOut } from "@/lib/auth-client"
 import {
   Avatar,
   AvatarFallback,
@@ -20,7 +24,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { EllipsisVerticalIcon, CircleUserRoundIcon, CreditCardIcon, BellIcon, LogOutIcon } from "lucide-react"
+import {
+  EllipsisVerticalIcon,
+  CircleUserRoundIcon,
+  BellIcon,
+  LogOutIcon,
+} from "lucide-react"
 
 export function NavUser({
   user,
@@ -32,6 +41,39 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  const [isSigningOut, setIsSigningOut] = useState(false)
+
+  async function handleSignOut() {
+    try {
+      setIsSigningOut(true)
+
+      await signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            toast.success("Sesión cerrada correctamente")
+            router.push("/login")
+            router.refresh()
+          },
+        },
+      })
+    } catch (error) {
+      console.error(error)
+
+      toast.error("No se pudo cerrar sesión", {
+        description: "Inténtalo nuevamente.",
+      })
+    } finally {
+      setIsSigningOut(false)
+    }
+  }
+
+  const initials = user.name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <SidebarMenu>
@@ -44,17 +86,22 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {initials || "US"}
+                </AvatarFallback>
               </Avatar>
+
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs text-muted-foreground">
                   {user.email}
                 </span>
               </div>
+
               <EllipsisVerticalIcon className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
@@ -65,8 +112,11 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {initials || "US"}
+                  </AvatarFallback>
                 </Avatar>
+
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs text-muted-foreground">
@@ -75,29 +125,30 @@ export function NavUser({
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
               <DropdownMenuItem>
-                <CircleUserRoundIcon
-                />
-                Account
+                <CircleUserRoundIcon />
+                Cuenta
               </DropdownMenuItem>
+
               <DropdownMenuItem>
-                <CreditCardIcon
-                />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <BellIcon
-                />
-                Notifications
+                <BellIcon />
+                Notificaciones
               </DropdownMenuItem>
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOutIcon
-              />
-              Log out
+
+            <DropdownMenuItem
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="cursor-pointer"
+            >
+              <LogOutIcon />
+              {isSigningOut ? "Cerrando sesión..." : "Cerrar sesión"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

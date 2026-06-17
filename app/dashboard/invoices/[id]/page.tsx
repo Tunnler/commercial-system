@@ -200,15 +200,23 @@ export default async function InvoiceDetailPage({
         </CardContent>
       </Card>
 
-      {!latestDispatch && (
-        <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" asChild>
+          <a href={`/dashboard/invoices/${invoice.id}/pdf`}>
+            Descargar PDF
+          </a>
+        </Button>
+
+        {!latestDispatch && (
           <Button asChild>
             <Link href="/dashboard/dispatches/new">
               Registrar despacho
             </Link>
           </Button>
-        </div>
-      )}
+        )}
+      </div>
+
+
     </div>
   )
 }
